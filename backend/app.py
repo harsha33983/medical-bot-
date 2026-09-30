@@ -104,6 +104,10 @@ def get_db():
 
 @app.post("/api/auth/register")
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    user_count = db.query(db_models.User).count()
+    if user_count >= 10:
+        raise HTTPException(status_code=400, detail="Maximum number of registrations (10) reached.")
+
     db_user = db.query(db_models.User).filter(db_models.User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")

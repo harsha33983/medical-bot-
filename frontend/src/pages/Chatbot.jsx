@@ -8,12 +8,21 @@ const THRESHOLD = 10;
 function Chatbot() {
   const navigate = useNavigate();
 
-  const [stage, setStage] = useState('PERSONAL_INFO');
-  const [personalInfo, setPersonalInfo] = useState({ name: '', age: '', gender: '' });
-  const [messages, setMessages] = useState([]);
+  const [stage, setStage] = useState(() => localStorage.getItem('chat_stage') || 'PERSONAL_INFO');
+  const [personalInfo, setPersonalInfo] = useState(() => {
+    const saved = localStorage.getItem('chat_personalInfo');
+    return saved ? JSON.parse(saved) : { name: '', age: '', gender: '' };
+  });
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem('chat_messages');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [symptomList, setSymptomList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSymptoms, setSelectedSymptoms] = useState([]);
+  const [selectedSymptoms, setSelectedSymptoms] = useState(() => {
+    const saved = localStorage.getItem('chat_selectedSymptoms');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [filteredSymptoms, setFilteredSymptoms] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,6 +37,13 @@ function Chatbot() {
       fetchSymptoms();
     }
   }, [navigate]);
+
+  useEffect(() => {
+    localStorage.setItem('chat_stage', stage);
+    localStorage.setItem('chat_personalInfo', JSON.stringify(personalInfo));
+    localStorage.setItem('chat_messages', JSON.stringify(messages));
+    localStorage.setItem('chat_selectedSymptoms', JSON.stringify(selectedSymptoms));
+  }, [stage, personalInfo, messages, selectedSymptoms]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -212,6 +228,17 @@ function Chatbot() {
     }, 1500);
   };
 
+  const handleResetChat = () => {
+    localStorage.removeItem('chat_stage');
+    localStorage.removeItem('chat_personalInfo');
+    localStorage.removeItem('chat_messages');
+    localStorage.removeItem('chat_selectedSymptoms');
+    setStage('PERSONAL_INFO');
+    setPersonalInfo({ name: '', age: '', gender: '' });
+    setMessages([]);
+    setSelectedSymptoms([]);
+  };
+
   return (
     <div className="app-layout">
       {/* Sidebar */}
@@ -227,11 +254,7 @@ function Chatbot() {
           <button className="sidebar-btn" onClick={() => navigate('/home')}>
             <Home size={18} /> <span>Main Menu</span>
           </button>
-          <button className={`sidebar-btn ${stage === 'PERSONAL_INFO' ? 'active' : ''}`} onClick={() => {
-            setStage('PERSONAL_INFO');
-            setMessages([]);
-            setSelectedSymptoms([]);
-          }}>
+          <button className={`sidebar-btn ${stage === 'PERSONAL_INFO' ? 'active' : ''}`} onClick={handleResetChat}>
             <PlusCircle size={18} /> <span>New Consultation</span>
           </button>
         </div>
@@ -358,7 +381,7 @@ function Chatbot() {
                           </div>
                           <div className="decision-buttons" style={{marginTop: 0}}>
                             <button className="btn btn-outline" onClick={() => navigate('/home')}>Main Menu</button>
-                            <button className="btn btn-outline" onClick={() => { setStage('PERSONAL_INFO'); setMessages([]); }}>End Chat (Restart)</button>
+                            <button className="btn btn-outline" onClick={handleResetChat}>End Chat (Restart)</button>
                           </div>
                         </div>
                       )}
